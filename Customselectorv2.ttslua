@@ -1,0 +1,200 @@
+function change_section(player, value, id)
+    self.UI.setAttribute(id.." Villains", "active", value)
+end
+
+function select_villain(player, value, id)
+  if value ~= "-1" then return end
+    switchCharacter(self.UI.getAttribute(id, "section"), id, player.color)
+end
+
+function show_tooltip(player, value, id)
+  local tooltip = self.UI.getAttribute(id, "tooltiptext")
+  UI.setAttribute("tooltiptext"..player.color, "text", tooltip)
+  UI.setAttribute("tooltip"..player.color, "text", tooltip)
+  UI.show("tooltip"..player.color)
+end
+
+function hide_tooltip(player, value, id)
+  UI.setAttribute("tooltip"..player.color, "active", false)
+end
+
+function random_villain(player, value, id)
+    local chosen = ALL_VILLAINS[math.random(1, #ALL_VILLAINS)]
+    switchCharacter(chosen[1], chosen[2], player.color)
+end
+
+function getChar(section, char)
+    local objects = {}
+    if EVERYTHING[section][char] ~= nil then
+        objects=EVERYTHING[section][char].data
+    end
+    if #objects==0 then
+        print("Character not found")
+    end
+    return objects
+end
+
+function switchCharacter(section, character, color)
+    local my_rot = self.getRotation()
+    local objects = getChar(section, character)
+    local scale = self.getScale()
+    scale.x = 1/scale.x
+    scale.z = 1/scale.z
+
+    UI.setAttribute("tooltip"..color, "active", false)
+    self.destruct()
+    function callback(o)
+        o.setRotation({o.getRotation().x, o.getRotation().y+my_rot.y, o.getRotation().z})
+    end
+    for _,v in ipairs(objects) do
+        local new_pos = self.positionToWorld(Vector(v.move_to) * scale)
+        spawnObjectJSON({
+            json              = v.json,
+            position          = new_pos,
+            callback_function = callback
+        })
+    end
+        local direction = Vector(0, 4, 12)
+    direction:rotateOver("y", my_rot.y)
+    -- forward = forward*2
+    Player[color].setHandTransform({
+        position = self.getPosition()+direction,
+        rotation = {0, my_rot.y+180, 0},
+        scale = {8, 6, 4}
+    })
+end
+
+
+function create_UI()
+    local assets = {
+        {
+            name="header-background",
+            url="http://cloud-3.steamusercontent.com/ugc/1791848789391403585/C5F4E5CCA28A050CFFD157C604957E78943F61B0/"
+        },
+    }
+    local toggles = {}
+    local total_toggles = 50
+    local gridviews = {}
+    ALL_VILLAINS = {}
+    for section, villains in pairs(EVERYTHING) do
+        if section ~= "Official" then
+            local tmp = {tag="ToggleButton", attributes={class="section-button", text=section, id=section}}
+
+            if section == "Playtesting" then
+                table.insert(toggles, {tag="Panel", attributes={height=498-total_toggles-50, flexibleHeight=false, preferredHeight=498-total_toggles}})
+            end
+            table.insert(toggles, tmp)
+            total_toggles = total_toggles + 50
+            local this_villains={}
+            for villain, info in pairs(villains) do
+                table.insert(this_villains, {villain, info.tooltip})
+                table.insert(ALL_VILLAINS, {section, villain})
+                table.insert(assets, {name=villain, url=info.image})
+            end
+            local grid={tag="GridLayout", attributes={class="villains", id=section.." Villains", active=false}, children={}}
+            while #this_villains > 0 do
+                local vil = table.remove(this_villains, 1)
+                grid.children[#grid.children+1] = {tag="Image", attributes={id=vil[1], section=section, class="villain-button", image=vil[1], tooltiptext=vil[2]}}
+            end
+            -- scrollviews[#scrollviews].children = grid
+            table.insert(gridviews, grid)
+        end
+    end
+    gridviews[1].attributes.active=true
+    toggles[1].attributes.isOn=True
+
+    table.insert(toggles, {tag="ToggleButton", attributes={class="section-button", text="Random Custom", id="Random", onClick="random_villain"}})
+
+    local ui ={
+        {tag="Defaults", children={
+            {tag="ToggleButton", attributes={
+                                    class="section-button",
+                                    Height=50,
+                                    flexibleHeight=false,
+                                    preferredHeight=50,
+                                    resizeTextForBestFit=true,
+                                    image="header-background",
+                                    textAlignment="MiddleCenter",
+                                    padding="2 2 3 3",
+                                    textColor="White",
+                                    onValueChanged="change_section"}},
+            {tag="Image", attributes={
+                                    class="villain-button",
+                                    preserveAspect=true,
+                                    onClick="select_villain",
+                                    preferredHeight=50,
+                                    ignoreLayout=True,
+                                    onMouseEnter="show_tooltip",
+                                    onMouseExit="hide_tooltip"}},
+            {tag="GridLayout", attributes={
+              spacing=10,
+              cellSize="100 100",
+              class="villains",
+              -- constraint="FixedColumnCount",
+              -- constraintCount=5,
+              position="-19 15 -3",
+              scale=".25 .25 .25",
+              rotation="0 0 180",
+              Width=660,
+              Height=495,
+            }}
+        }},
+
+        {tag="ToggleGroup", attributes={id="sections"}, children={
+            {tag="VerticalLayout", attributes={Rotation="180 180 0", position="86 14 -3", width=121, height=498, scale=".25 .25 .25", spacing=10}, children=toggles}
+        }},
+    }
+    -- local scrollview={tag="VerticalScrollView", attributes={position="-19 15 -3",
+    -- scale=".25 .25 .25",
+    -- rotation="0 0 180",
+    -- Width=660,
+    -- Height=495,}, children={}}
+    for _, layout in ipairs(gridviews) do
+        table.insert(ui, layout)
+    end
+    -- table.insert(ui, scrollview)
+    self.UI.setCustomAssets(assets)
+    Wait.frames(||self.UI.setXmlTable(ui), 2)
+    Wait.frames(||print(self.UI.getXml()), 10)
+end
+
+function onLoad()
+    log("Setting everything on "..self.guid)
+    EVERYTHING = find_object_by_name("Custom Villains curated by Custom Evaluation Team").getTable('EVERYTHING')
+    create_UI()
+    set_global_ui()
+end
+
+function set_global_ui()
+  local global_ui = UI.getXmlTable()
+  for _, color in ipairs(Player.getAvailableColors()) do
+    table.insert(global_ui,
+    {tag="Panel", attributes={
+      showAnimation="FadeIn",
+      rectAlignment="LowerCenter",
+      Width="40%",
+      Height="5%",
+      color="#382843",
+      outline="White",
+      outlineSize="3 3",
+      id="tooltip"..color,
+      active="False",
+      offsetXY="0 10"
+    }, children={
+      {tag="Text", attributes={
+        id="tooltiptext"..color,
+        resizeTextForBestFit="True",
+        color="White",
+        text="",
+      }},
+    }})
+  end
+  UI.setXmlTable(global_ui, {{name="tooltip_background",url="http://cloud-3.steamusercontent.com/ugc/1791848789391403585/C5F4E5CCA28A050CFFD157C604957E78943F61B0/"}})
+end
+
+function find_object_by_name(name)
+    for _, obj in ipairs(getAllObjects()) do
+        if obj.getName() == name then return obj end
+    end
+    return nil
+end

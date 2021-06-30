@@ -1,0 +1,47 @@
+#include !/stattracker/stats
+utils = require("utils/utils")
+
+function onLoad(save_state)
+    loadStats(save_state, "https://script.google.com/macros/s/AKfycbw3nIy_-VlhjWOSj12dZfSWSLztpq8WGQmnIgqzh7a0dAA_QgU/exec", 600, 120, true)
+    local KEEPER = find_object_by_name("The keeper of information")
+    log("Trying to retreive latest saved data")
+    function callback(wr)
+        if wr.response_code == 200 then
+            log("Data received.")
+            KEEPER.setLuaScript(wr.text)
+            KEEPER = KEEPER.reload()
+        else
+            log("Something went wrong retreiving newest save")
+            log(wr.error)
+        end
+    end
+    WebRequest.get("http://eldinds.synology.me/script/marvelvillains.ttslua", callback)
+end
+
+function find_object_by_name(name)
+    for _, obj in ipairs(getAllObjects()) do
+        if obj.getName() == name then return obj end
+    end
+    return nil
+end
+
+function spawned(params)
+    local villain = params[1]
+    function after_half_second()
+        local common_deck = utils.find_object_by_name("Common Fate Deck")
+        local villain_fate_deck = utils.find_object_by_name(villain.." Fate Deck")
+        if common_deck == nil or villain_fate_deck == nil then
+            log("A Fate deck not found")
+            log(common_deck)
+            log(villain_fate_deck)
+            return false
+        else
+            function after_load()
+                common_deck.putObject(villain_fate_deck)
+                common_deck.shuffle()
+            end
+            Wait.condition(after_load, ||not villain_fate_deck.spawning)
+        end
+    end
+    Wait.time(after_half_second, 0.5)
+end

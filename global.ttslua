@@ -1,0 +1,26 @@
+#include ../stattracker/stats
+
+function onLoad(save_state)
+    STAT_URL = "https://script.google.com/macros/s/AKfycbzjnXhgrqrh-ZQMKbNwiUTfreUu-lRocv9zYVTRKyemT8Ntb70/exec"
+    loadStats(600, 120, false)
+    local KEEPER = find_object_by_name("The keeper of information")
+    log("Trying to retreive latest saved data")
+    function callback(wr)
+        if wr.response_code == 200 then
+            log("Data received.")
+            KEEPER.setLuaScript(wr.text)
+            KEEPER = KEEPER.reload()
+        else
+            log("Something went wrong retreiving newest save")
+            log(wr.error)
+        end
+    end
+    WebRequest.get("http://eldinds.synology.me/script/villainsv7.ttslua", callback)
+end
+
+function find_object_by_name(name)
+    for _, obj in ipairs(getAllObjects()) do
+        if obj.getName() == name then return obj end
+    end
+    return nil
+end

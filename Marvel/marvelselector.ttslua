@@ -1,0 +1,77 @@
+utils = require("utils/utils")
+
+buttons = {}
+buttons["Hela"] = {click_function = "switchHela", function_owner = self, label = " ", position = {-2, 0.01, 0}, scale = {1, 1, 1}, width = 500, height = 700, font_size = 200, tooltip = "Hela"}
+buttons["Killmonger"] = {click_function = "switchKillmonger", function_owner = self, label = " ", position = {-1, 0.01, 0}, scale = {1, 1, 1}, width = 500, height = 700, tooltip = "Killmonger"}
+buttons["Taskmaster"] = {click_function = "switchTaskmaster", function_owner = self, label = " ", position = {0, 0.01, 0}, scale = {1, 1, 1}, width = 500, height = 680, tooltip = "Taskmaster"}
+buttons["Thanos"] = {click_function = "switchThanos", function_owner = self, label = " ", position = {1, 0.01, 0}, scale = {1, 1, 1}, width = 500, height = 700, tooltip = "Thanos"}
+buttons["Ultron"] = {click_function = "switchUltron", function_owner = self, label = " ",  position = {2, 0.01, 0}, scale = {1, 1, 1}, width = 500, height = 700, tooltip = "Ultron"}
+
+
+function createButtons()
+    for k, b in pairs(buttons) do
+        self.createButton(b)
+        _G['switch'..k] = function(o, color) switchCharacter(k, color) end
+    end
+    self.createButton({click_function = "SwitchRandom", function_owner = self, label = "Select a\nRandom Villain", position = {0, -0.02, 0}, rotation = {0, 0, 180}, scale = {1, 1, 1}, width = 2300, height = 600, font_size = 180, tooltip="Select a random Villain"})
+end
+
+function onLoad(save_state)
+    log("Setting everything on "..self.guid)
+    EVERYTHING = utils.find_object_by_name("The keeper of information").getTable('EVERYTHING')
+    createButtons()
+end
+
+function getChar(char)
+    local objects = {}
+    if EVERYTHING.Official[char] ~= nil then
+        objects=EVERYTHING.Official[char].data
+    end
+    if #objects==0 then
+        print("Character not found")
+    end
+    return objects
+end
+
+function SwitchRandom(_, player)
+    local choices = {}
+    for k, _ in pairs(EVERYTHING.Official) do
+        table.insert(choices, k)
+    end
+    switchCharacter(choices[math.random(1,#choices)], player, true)
+end
+
+function switchCharacter(character, color, random)
+    local my_rot = self.getRotation()
+    local objects = getChar(character)
+    local scale = self.getScale()
+    scale.x = 1/scale.x
+    scale.z = 1/scale.z
+
+    self.destruct()
+    function callback(o)
+        o.setRotation({o.getRotation().x, o.getRotation().y+my_rot.y, o.getRotation().z})
+    end
+    for _,v in ipairs(objects) do
+        local vec = Vector(v.move_to) * scale
+        vec.y = vec.y -0.2
+        if random then
+            vec = vec * Vector({-1, -0.9, 1})
+        end
+        local new_pos = self.positionToWorld(vec)
+        spawnObjectJSON({
+            json              = v.json,
+            position          = new_pos,
+            callback_function = callback
+        })
+    end
+        local direction = Vector(0, 4, 12)
+    direction:rotateOver("y", my_rot.y)
+    -- forward = forward*2
+    Player[color].setHandTransform({
+        position = self.getPosition()+direction,
+        rotation = {0, my_rot.y+180, 0},
+        scale = {8, 6, 4}
+    })
+    Global.call("spawned", {character})
+end
