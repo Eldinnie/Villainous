@@ -4,7 +4,7 @@ function onLoad()
 end
 
 SELECTED = ""
-URL = "http://eldinds.synology.me/script/villainsv7.ttslua"
+URL = "https://raw.githubusercontent.com/Eldinnie/Villainous/main/customsv1.ttslua"
 EVERYTHING = {}
 -- #include villainsv6
 

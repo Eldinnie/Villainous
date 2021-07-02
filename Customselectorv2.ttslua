@@ -155,7 +155,6 @@ function create_UI()
     -- table.insert(ui, scrollview)
     self.UI.setCustomAssets(assets)
     Wait.frames(||self.UI.setXmlTable(ui), 2)
-    Wait.frames(||print(self.UI.getXml()), 10)
 end
 
 function onLoad()
