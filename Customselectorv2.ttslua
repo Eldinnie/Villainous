@@ -11,7 +11,7 @@ function show_tooltip(player, value, id)
   local tooltip = self.UI.getAttribute(id, "tooltiptext")
   UI.setAttribute("tooltiptext"..player.color, "text", tooltip)
   UI.setAttribute("tooltip"..player.color, "text", tooltip)
-  UI.show("tooltip"..player.color)
+  UI.setAttribute("tooltip"..player.color, "active", true)
 end
 
 function hide_tooltip(player, value, id)
@@ -178,7 +178,8 @@ function set_global_ui()
       outlineSize="3 3",
       id="tooltip"..color,
       active="False",
-      offsetXY="0 10"
+      offsetXY="0 10",
+      visibility=color
     }, children={
       {tag="Text", attributes={
         id="tooltiptext"..color,
