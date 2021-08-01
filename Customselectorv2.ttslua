@@ -1,13 +1,15 @@
 function change_section(player, value, id)
-    self.UI.setAttribute(id.." Villains", "active", value)
+  if value ~= "-1" or player.color == "Grey" then return end
+  self.UI.setAttribute(id.." Villains", "active", value)
 end
 
 function select_villain(player, value, id)
-  if value ~= "-1" then return end
-    switchCharacter(self.UI.getAttribute(id, "section"), id, player.color)
+  if value ~= "-1" or player.color == "Grey" then return end
+  switchCharacter(self.UI.getAttribute(id, "section"), id, player.color)
 end
 
 function show_tooltip(player, value, id)
+  if player.color == "Grey" then return end
   local tooltip = self.UI.getAttribute(id, "tooltiptext")
   UI.setAttribute("tooltiptext"..player.color, "text", tooltip)
   UI.setAttribute("tooltip"..player.color, "text", tooltip)
@@ -19,49 +21,52 @@ function hide_tooltip(player, value, id)
 end
 
 function random_villain(player, value, id)
-    local chosen = ALL_VILLAINS[math.random(1, #ALL_VILLAINS)]
-    switchCharacter(chosen[1], chosen[2], player.color)
+  if value ~= "-1" or player.color == "Grey" then return end
+  local chosen = ALL_VILLAINS[math.random(1, #ALL_VILLAINS)]
+  switchCharacter(chosen[1], chosen[2], player.color)
 end
 
 function getChar(section, char)
-    local objects = {}
-    if EVERYTHING[section][char] ~= nil then
-        objects=EVERYTHING[section][char].data
-    end
-    if #objects==0 then
-        print("Character not found")
-    end
-    return objects
+  local objects = {}
+  if EVERYTHING[section][char] ~= nil then
+    objects=EVERYTHING[section][char].data
+  end
+  if #objects==0 then
+    print("Character not found")
+  end
+  return objects
 end
 
 function switchCharacter(section, character, color)
-    local my_rot = self.getRotation()
-    local objects = getChar(section, character)
-    local scale = self.getScale()
-    scale.x = 1/scale.x
-    scale.z = 1/scale.z
+  local my_rot = self.getRotation()
+  local objects = getChar(section, character)
+  local scale = self.getScale()
+  scale.x = 1/scale.x
+  scale.z = 1/scale.z
 
-    UI.setAttribute("tooltip"..color, "active", false)
-    self.destruct()
-    function callback(o)
-        o.setRotation({o.getRotation().x, o.getRotation().y+my_rot.y, o.getRotation().z})
-    end
-    for _,v in ipairs(objects) do
-        local new_pos = self.positionToWorld(Vector(v.move_to) * scale)
-        spawnObjectJSON({
-            json              = v.json,
-            position          = new_pos,
-            callback_function = callback
-        })
-    end
-        local direction = Vector(0, 4, 12)
-    direction:rotateOver("y", my_rot.y)
-    -- forward = forward*2
-    Player[color].setHandTransform({
-        position = self.getPosition()+direction,
-        rotation = {0, my_rot.y+180, 0},
-        scale = {8, 6, 4}
+  for _, col in ipairs(Player.getAvailableColors()) do
+    UI.setAttribute("tooltip"..col, "active", false)
+  end
+  self.destruct()
+  function callback(o)
+    o.setRotation({o.getRotation().x, o.getRotation().y+my_rot.y, o.getRotation().z})
+  end
+  for _,v in ipairs(objects) do
+    local new_pos = self.positionToWorld(Vector(v.move_to) * scale)
+    spawnObjectJSON({
+      json              = v.json,
+      position          = new_pos,
+      callback_function = callback
     })
+  end
+  local direction = Vector(0, 4, 12)
+  direction:rotateOver("y", my_rot.y)
+  -- forward = forward*2
+  Player[color].setHandTransform({
+    position = self.getPosition()+direction,
+    rotation = {0, my_rot.y+180, 0},
+    scale = {8, 6, 4}
+  })
 end
 
 
@@ -166,6 +171,8 @@ end
 
 function set_global_ui()
   local global_ui = UI.getXmlTable()
+  local global_ui_text = UI.getXml()
+  if string.find(global_ui_text, 'tooltipWhite') then return end
   for _, color in ipairs(Player.getAvailableColors()) do
     table.insert(global_ui,
     {tag="Panel", attributes={
