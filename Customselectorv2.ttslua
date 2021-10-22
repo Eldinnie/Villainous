@@ -1,5 +1,5 @@
 function change_section(player, value, id)
-  if value ~= "-1" or player.color == "Grey" then return end
+  if player.color == "Grey" then return end
   self.UI.setAttribute(id.." Villains", "active", value)
 end
 
