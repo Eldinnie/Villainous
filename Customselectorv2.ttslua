@@ -93,7 +93,9 @@ function create_UI()
             local this_villains={}
             for villain, info in pairs(villains) do
                 table.insert(this_villains, {villain, info.tooltip})
-                table.insert(ALL_VILLAINS, {section, villain})
+                if section ~= "Jokes" and section ~= "Reskins" then
+                  table.insert(ALL_VILLAINS, {section, villain})
+                end
                 table.insert(assets, {name=villain, url=info.image})
             end
             local grid={tag="GridLayout", attributes={class="villains", id=section.." Villains", active=false}, children={}}
@@ -108,7 +110,7 @@ function create_UI()
     gridviews[1].attributes.active=true
     toggles[1].attributes.isOn=True
 
-    table.insert(toggles, {tag="ToggleButton", attributes={class="section-button", text="Random Custom", id="Random", onClick="random_villain"}})
+    table.insert(toggles, {tag="ToggleButton", attributes={class="section-button", text="Random Custom", id="Random", onClick=""}})
 
     local ui ={
         {tag="Defaults", children={
