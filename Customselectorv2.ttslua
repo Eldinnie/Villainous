@@ -110,7 +110,7 @@ function create_UI()
     gridviews[1].attributes.active=true
     toggles[1].attributes.isOn=True
 
-    table.insert(toggles, {tag="ToggleButton", attributes={class="section-button", text="Random Custom", id="Random", onClick=""}})
+    table.insert(toggles, {tag="ToggleButton", attributes={class="section-button", text="Random Custom", id="Random", onClick="random_villain"}})
 
     local ui ={
         {tag="Defaults", children={
